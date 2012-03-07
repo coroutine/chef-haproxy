@@ -27,3 +27,8 @@ default['haproxy']['x_forwarded_for'] = false
 default['haproxy']['enable_ssl'] = false
 default['haproxy']['ssl_incoming_port'] = "443"
 default['haproxy']['ssl_member_port'] = "8443"
+
+# A list data bag items containing HAProxy
+# configuration details. These should be 
+# overridden in a role.
+default['haproxy']['config_data_items'] = []
