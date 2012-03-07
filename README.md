@@ -1,10 +1,13 @@
 Description
 ===========
 
-Installs haproxy and prepares the configuration location.
+This is a fork of the Opscode [haproxy](https://github.com/opscode/cookbooks/tree/master/haproxy) cookbook (originally v.1.0.4), that has been modified to configure app load balancers from a data bag items.
 
 Changes
 =======
+## v1.1.0:
+    
+* Forked and modified to pull configuration data from a data bag.
 
 ## v1.0.4:
 
@@ -49,6 +52,7 @@ Attributes
 * `node['haproxy']['enable_ssl']` - whether or not to create listeners for ssl, default false
 * `node['haproxy']['ssl_member_port']` - the port that member systems will be listening on for ssl, default 8443
 * `node['haproxy']['ssl_incoming_port']` - sets the port on which haproxy listens for ssl, default 443
+* `node['haproxy']['config_data_items']` - a list of items from the `haproxy` data bag. These will be used to write the configuration file (see below).
 
 Usage
 =====
@@ -57,30 +61,43 @@ Use either the default recipe or the `app_lb` recipe.
 
 When using the default recipe, modify the haproxy.cfg.erb file with listener(s) for your sites/servers.
 
-The `app_lb` recipe is designed to be used with the application cookbook, and provides search mechanism to find the appropriate application servers. Set this in a role that includes the haproxy::app_lb recipe. For example,
+The `app_lb` recipe reads configuration information from items in an `haproxy` data bag. To get started, define a role and include the `id`s for the data bag items in the `config_data_items` attribute.
 
-    name "load_balancer"
-    description "haproxy load balancer"
-    run_list("recipe[haproxy::app_lb]")
+A sample role, `haproxy_demo` might look like this:
+
+    name "haproxy_demo"
+    description "demo haproxy recipe"
+    run_list(
+      "recipe[haproxy::default]",
+      "recipe[haproxy::app_lb]",
+    )
     override_attributes(
       "haproxy" => {
-        "app_server_role" => "webserver"
+        'incoming_port' => "80",
+        'balance_algorithm' => "roundrobin",
+        'config_data_items' => ['appserver1', 'appserver2']
       }
     )
 
-The search uses the node's `chef_environment`. For example, create `environments/production.rb`, then upload it to the server with knife
+The above role references `appserver1` and `appserver2` data bag items (stored in, e.g. `haproxy/appserver1.json`). These data bags would look something like this:
 
-    % cat environments/production.rb
-    name "production"
-    description "Nodes in the production environment."
-    % knife environment from file production.rb
+    {
+        "id": "appserver1",
+        "hostname":"appserver1.example.com", # hostname to which connections are proxied
+        "ipaddress": "192.168.0.1", # ip address of target system
+        "port":"8080",              # port to which connections are proxied
+        "proxy_weight": 1,          # preference to give this system
+        "max_connections":100, 
+        "ssl_port":"443"            # port to which SSL connections are proxied
+    }
 
 License and Author
 ==================
 
 Author:: Joshua Timberman (<joshua@opscode.com>)
+Author:: Brad Montgomery (<bmontgomery@coroutine.com>)
 
-Copyright:: 2009-2011, Opscode, Inc
+Copyright:: 2009-2012, Opscode, Inc
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
