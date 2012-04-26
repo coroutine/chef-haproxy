@@ -28,6 +28,13 @@ default['haproxy']['enable_ssl'] = false
 default['haproxy']['ssl_incoming_port'] = "443"
 default['haproxy']['ssl_member_port'] = "8443"
 
+# Set the `cookie_prefix` to a string if you want to use
+# cookie prefixing; this cookie will be set on every request and
+# will be prefixed with the server name.
+default['haproxy']['cookie_prefix'] = nil
+# See section 2 at: 
+# http://haproxy.1wt.eu/download/1.2/doc/architecture.txt
+
 # A list data bag items containing HAProxy
 # configuration details. These should be 
 # overridden in a role.
