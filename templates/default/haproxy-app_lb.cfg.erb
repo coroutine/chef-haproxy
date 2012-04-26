@@ -19,15 +19,7 @@ defaults
         contimeout      5000
         clitimeout      50000
         srvtimeout      50000
-        <% if node["haproxy"]["cookie_prefix"] %>
-        # the proxy will modify EVERY cookie sent by the client and the server,
-        # so it is important that it can access to ALL cookies in ALL requests for
-        # each session. This implies that there is no keep-alive (HTTP/1.1), thus 
-        # the "httpclose" option.
-        cookie <%= node["haproxy"]["cookie_prefix"] %> prefix
-        option  httpclose 
-        option  forwardfor
-        <% elsif node["haproxy"]["x_forwarded_for"] -%>
+        <% if node["haproxy"]["x_forwarded_for"] -%>
         option httpclose
         option forwardfor
         <% end -%>
@@ -35,12 +27,21 @@ defaults
 # Set up application listeners here.
 listen application 0.0.0.0:<%= node["haproxy"]["incoming_port"] %>
   balance <%= node["haproxy"]["balance_algorithm"] %>
+  <% if node["haproxy"]["cookie_prefix"] %>
+  # the proxy will modify EVERY cookie sent by the client and the server,
+  # so it is important that it can access to ALL cookies in ALL requests for
+  # each session. This implies that there is no keep-alive (HTTP/1.1), thus 
+  # the "httpclose" option.
+  cookie <%= node["haproxy"]["cookie_prefix"] %> prefix
+  option  httpclose 
+  option  forwardfor
+  <% end -%>
   <% @pool_members.each do |member| -%>
   server <%= member[:hostname] -%> 
-         <%= member[:ipaddress] -%>:<%= member[:port] -%> 
-         <%= "cookie #{member[:hostname]}" unless node["haproxy"]["cookie_prefix"].nil? -%>
-         weight <%= member[:proxy_weight] -%> 
-         maxconn <%= member[:max_connections] %> check
+    <%= member[:ipaddress] -%>:<%= member[:port] -%> 
+    <%= "cookie #{member[:hostname]}" unless node["haproxy"]["cookie_prefix"].nil? -%>
+    weight <%= member[:proxy_weight] -%> 
+    maxconn <%= member[:max_connections] %> check
   <% end -%>
 
 <% if node["haproxy"]["enable_ssl"] -%>
