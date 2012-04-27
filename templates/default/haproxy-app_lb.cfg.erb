@@ -13,8 +13,8 @@ defaults
         mode    http
         option  httplog
         option  dontlognull
-        retries 3
         option  redispatch
+        retries 3
         maxconn 2000
         contimeout      5000
         clitimeout      50000
@@ -31,15 +31,18 @@ listen application 0.0.0.0:<%= node["haproxy"]["incoming_port"] %>
   # the proxy will modify EVERY cookie sent by the client and the server,
   # so it is important that it can access to ALL cookies in ALL requests for
   # each session. This implies that there is no keep-alive (HTTP/1.1), thus 
-  # the "httpclose" option.
+  # the "httpclose" and "forwardfor" options.
   cookie <%= node["haproxy"]["cookie_prefix"] %> prefix
   option  httpclose 
   option  forwardfor
   <% end -%>
+  <% if node["haproxy"]["cookie_insert"] %>
+  cookie <%= node["haproxy"]["cookie_insert"] -%> insert indirect
+  <% end %>
   <% @pool_members.each do |member| -%>
   server <%= member[:hostname] -%> 
     <%= member[:ipaddress] -%>:<%= member[:port] -%> 
-    <%= "cookie #{member[:hostname]}" unless node["haproxy"]["cookie_prefix"].nil? -%>
+    <%= "cookie #{member[:hostname]}" unless node["haproxy"]["cookie_prefix"].nil? && node["haproxy"]["cookie_insert"].nil? -%>
     weight <%= member[:proxy_weight] -%> 
     maxconn <%= member[:max_connections] %> check
   <% end -%>

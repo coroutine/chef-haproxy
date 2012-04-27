@@ -30,6 +30,7 @@ pool_members = []
 node['haproxy']['config_data_items'].each do |proxy_data_bag_name|
   search(:haproxy, "id:#{proxy_data_bag_name}") do |proxy_data|
     pool_members << proxy_data
+    Chef::Log.info("Setting up HAProxy Pool Member #{proxy_data[:hostname]}")
   end
 end
 
