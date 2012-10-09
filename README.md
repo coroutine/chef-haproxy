@@ -5,6 +5,10 @@ This is a fork of the Opscode [haproxy](https://github.com/opscode/cookbooks/tre
 
 Changes
 =======
+## v1.2.0:
+
+* Got rid of dependence upon data bags for the definition of backend servers.  We now use an attribute named `backend_servers`.  Collection and the attributes of each element mirror those of the data bag.
+
 ## v1.1.0:
     
 * Forked and modified to pull configuration data from a data bag.
@@ -43,16 +47,15 @@ Attributes
 ==========
 
 * `node['haproxy']['incoming_port']` - sets the port on which haproxy listens
-* `node['haproxy']['member_port']` - the port that member systems will be listening on, default 80
 * `node['haproxy']['enable_admin']` - whether to enable the admin interface. default true. Listens on port 22002.
-* `node['haproxy']['app_server_role']` - used by the `app_lb` recipe to search for a specific role of member systems. Default `webserver`.
 * `node['haproxy']['balance_algorithm']` - sets the load balancing algorithm; defaults to roundrobin.
 * `node['haproxy']['member_max_connections']` - the maxconn value to be set for each app server
 * `node['haproxy']['x_forwarded_for']` - if true, creates an X-Forwarded-For header containing the original client's IP address. This option disables KeepAlive.
 * `node['haproxy']['enable_ssl']` - whether or not to create listeners for ssl, default false
-* `node['haproxy']['ssl_member_port']` - the port that member systems will be listening on for ssl, default 8443
 * `node['haproxy']['ssl_incoming_port']` - sets the port on which haproxy listens for ssl, default 443
-* `node['haproxy']['config_data_items']` - a list of items from the `haproxy` data bag. These will be used to write the configuration file (see below).
+* `node['haproxy']['cookie_insert']` - sets the `cookie_insert` string if you want load balancing based on cookie insertion
+* `node['haproxy']['cookie_prefix']` - sets the `cookie_prefix` string if you want to use cookie prefixing
+* `node['haproxy']['backend_servers']` - a list of backend server configurations. These will be used to write the configuration file (see below).
 
 Usage
 =====
@@ -60,8 +63,6 @@ Usage
 Use either the default recipe or the `app_lb` recipe.
 
 When using the default recipe, modify the haproxy.cfg.erb file with listener(s) for your sites/servers.
-
-The `app_lb` recipe reads configuration information from items in an `haproxy` data bag. To get started, define a role and include the `id`s for the data bag items in the `config_data_items` attribute.
 
 A sample role, `haproxy_demo` might look like this:
 
@@ -75,27 +76,33 @@ A sample role, `haproxy_demo` might look like this:
       "haproxy" => {
         'incoming_port' => "80",
         'balance_algorithm' => "roundrobin",
-        'config_data_items' => ['appserver1', 'appserver2']
+        'backend_servers' => [
+          {
+            "hostname"        => "appserver1.example.com",
+            "ipaddress"       => "192.168.0.1",
+            "port"            => "8080",
+            "proxy_weight"    => 1,
+            "max_connections" => 100,
+            "ssl_port"        => 443
+          },
+          {
+            "hostname"        => "appserver2.example.com",
+            "ipaddress"       => "192.168.0.2",
+            "port"            => "8080",
+            "proxy_weight"    => 1,
+            "max_connections" => 100,
+            "ssl_port"        => 443
+          }
+        ]
       }
     )
-
-The above role references `appserver1` and `appserver2` data bag items (stored in, e.g. `haproxy/appserver1.json`). These data bags would look something like this:
-
-    {
-        "id": "appserver1",
-        "hostname":"appserver1.example.com", # hostname to which connections are proxied
-        "ipaddress": "192.168.0.1", # ip address of target system
-        "port":"8080",              # port to which connections are proxied
-        "proxy_weight": 1,          # preference to give this system
-        "max_connections":100, 
-        "ssl_port":"443"            # port to which SSL connections are proxied
-    }
 
 License and Author
 ==================
 
 Author:: Joshua Timberman (<joshua@opscode.com>)
 Author:: Brad Montgomery (<bmontgomery@coroutine.com>)
+Author:: Tim Lowrimore (<tlowrimore@coroutine.com>)
 
 Copyright:: 2009-2012, Opscode, Inc
 

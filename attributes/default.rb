@@ -17,16 +17,13 @@
 # limitations under the License.
 #
 
-default['haproxy']['incoming_port']     = "80"
-default['haproxy']['member_port']       = "8080"
-default['haproxy']['enable_admin']      = true
-default['haproxy']['app_server_role']   = "webserver"
-default['haproxy']['balance_algorithm'] = "roundrobin" 
-default['haproxy']['x_forwarded_for']   = false
-default['haproxy']['enable_ssl']        = false
-default['haproxy']['ssl_incoming_port'] = "443"
-default['haproxy']['ssl_member_port']   = "8443"
-default['haproxy']['member_max_connections'] = "100"
+default['haproxy']['incoming_port']           = "80"
+default['haproxy']['enable_admin']            = true
+default['haproxy']['balance_algorithm']       = "roundrobin" 
+default['haproxy']['x_forwarded_for']         = false
+default['haproxy']['enable_ssl']              = false
+default['haproxy']['ssl_incoming_port']       = "443"
+default['haproxy']['member_max_connections']  = "100"
 
 # Set the `cookie_insert` to a string if you want load balancing 
 # based on cookie insertion
@@ -40,7 +37,14 @@ default['haproxy']['cookie_prefix'] = nil
 # See the docs for more info on cookie insertion and prefixing:
 # http://haproxy.1wt.eu/download/1.3/doc/architecture.txt
 
-# A list data bag items containing HAProxy
+# A list  containing HAProxy backend server
 # configuration details. These should be 
-# overridden in a role.
-default['haproxy']['config_data_items'] = []
+# overridden in a role or environment.
+default['haproxy']['backend_servers'] = [
+  "hostname"        => "app0",
+  "ipaddress"       => "0.0.0.0",
+  "port"            => "8080",
+  "proxy_weight"    => 1,
+  "max_connections" => 100,
+  "ssl_port"        => 443
+]

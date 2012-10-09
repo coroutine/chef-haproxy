@@ -23,23 +23,12 @@
 # and set up the service.
 include_recipe "haproxy::default"
 
-# The `config_data_items` attribute should be defined, and contain
-# a list of data bag items that define each instance of haproxy;
-# this contains information such as hostname/ipaddress/port of the
-pool_members = []
-node['haproxy']['config_data_items'].each do |proxy_data_bag_name|
-  search(:haproxy, "id:#{proxy_data_bag_name}") do |proxy_data|
-    pool_members << proxy_data
-    Chef::Log.info("Setting up HAProxy Pool Member #{proxy_data[:hostname]}")
-  end
-end
-
 # Overwrite the haproxy config with data from our app pool
 template "/etc/haproxy/haproxy.cfg" do
-  source "haproxy-app_lb.cfg.erb"
-  owner "root"
-  group "root"
-  mode 0644
-  variables :pool_members => pool_members.uniq
-  notifies :restart, "service[haproxy]"
+  source    "haproxy-app_lb.cfg.erb"
+  owner     "root"
+  group     "root"
+  mode      0644
+  variables :backend_servers => node['haproxy']['backend_servers'].uniq
+  notifies  :restart, "service[haproxy]"
 end
